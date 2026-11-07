@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Tower Defense 3D</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        .hud-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="text-white">
+
+    <!-- LOBBY & MENU UTAMA -->
+    <div id="lobby-screen" class="absolute inset-0 z-50 flex flex-col justify-between p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <div class="flex justify-between items-center hud-panel px-6 py-4 rounded-2xl shadow-2xl">
+            <div>
+                <h1 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">TOWER DEFENSE 3D</h1>
+                <p class="text-xs text-slate-400">Versi 1.0.0 - Full Realistic Edition</p>
+            </div>
+            <div class="flex gap-4 items-center">
+                <div class="flex items-center gap-2 px-4 py-2 hud-panel rounded-xl border border-yellow-500/30">
+                    <span class="text-yellow-400 font-bold">🪙 <span id="ui-coins">1500</span></span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 hud-panel rounded-xl border border-purple-500/30">
+                    <span class="text-purple-400 font-bold">💎 <span id="ui-robux">100</span> Robux</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-auto max-w-5xl mx-auto w-full">
+            <div onclick="openModal('mode-modal')" class="hud-panel p-6 rounded-3xl hover:border-yellow-500/50 transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="text-5xl mb-4 group-hover:scale-110 transition">🏰</div>
+                <h2 class="text-xl font-bold mb-2">Mulai Bermain</h2>
+                <p class="text-sm text-slate-400">Pilih mode Solo, Multiplayer, atau Event Eksklusif.</p>
+            </div>
+            <div onclick="openModal('shop-modal')" class="hud-panel p-6 rounded-3xl hover:border-yellow-500/50 transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="text-5xl mb-4 group-hover:scale-110 transition">🛒</div>
+                <h2 class="text-xl font-bold mb-2">Toko Senjata & Peti</h2>
+                <p class="text-sm text-slate-400">Beli senjata realistis, upgrade, & gacha skin senjata.</p>
+            </div>
+            <div onclick="openModal('friend-modal')" class="hud-panel p-6 rounded-3xl hover:border-yellow-500/50 transition cursor-pointer flex flex-col items-center text-center group">
+                <div class="text-5xl mb-4 group-hover:scale-110 transition">👥</div>
+                <h2 class="text-xl font-bold mb-2">Daftar Teman & Room</h2>
+                <p class="text-sm text-slate-400">Mabar dengan kode ruangan & undang teman.</p>
+            </div>
+        </div>
+
+        <div class="flex justify-center gap-4">
+            <button onclick="openModal('code-modal')" class="px-6 py-3 hud-panel rounded-xl font-bold hover:bg-slate-800 transition border border-cyan-500/30 text-cyan-400">🎁 Redeem Code</button>
+            <button onclick="openModal('robux-modal')" class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold hover:opacity-90 transition shadow-lg shadow-purple-500/20">💎 Beli Item Robux</button>
+        </div>
+    </div>
+
+    <!-- MODAL: PILIH MODE -->
+    <div id="mode-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-md w-full border border-slate-700">
+            <h2 class="text-2xl font-bold mb-4 text-center">Pilih Mode Permainan</h2>
+            <div class="space-y-3">
+                <button onclick="startGame('solo')" class="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-left flex justify-between items-center">
+                    <span>🛡️ Solo Mode</span>
+                    <span class="text-xs text-slate-400">Main Sendiri</span>
+                </button>
+                <button onclick="startGame('multi')" class="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl font-bold text-left flex justify-between items-center">
+                    <span>🌐 Multiplayer (Room Code)</span>
+                    <span class="text-xs text-slate-400">Mabar Teman</span>
+                </button>
+                <button onclick="startGame('event')" class="w-full p-4 bg-gradient-to-r from-yellow-600/30 to-orange-600/30 hover:bg-slate-700 rounded-2xl font-bold text-left flex justify-between items-center border border-yellow-500/30">
+                    <span>🔥 Event Mode (Eksklusif Token)</span>
+                    <span class="text-xs text-yellow-400 font-bold">Hadiah Langka!</span>
+                </button>
+            </div>
+            <button onclick="closeModal('mode-modal')" class="w-full mt-6 py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-2xl font-bold">Kembali</button>
+        </div>
+    </div>
+
+    <!-- MODAL: TOKO & GACHA -->
+    <div id="shop-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-2xl w-full border border-slate-700 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-4 text-center">Toko Senjata & Peti Gacha Skin</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                    <h3 class="font-bold text-lg mb-2 text-yellow-400">Pistol Glock (Murah)</h3>
+                    <p class="text-xs text-slate-400 mb-4">Senjata standar cepat.</p>
+                    <button onclick="buyItem('weapon', 'Glock', 500)" class="w-full py-2 bg-yellow-500 text-slate-950 font-bold rounded-xl">Beli (500 🪙)</button>
+                </div>
+                <div class="p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                    <h3 class="font-bold text-lg mb-2 text-yellow-400">Minigun Heavy (Mahal)</h3>
+                    <p class="text-xs text-slate-400 mb-4">Kecepatan tembak luar biasa.</p>
+                    <button onclick="buyItem('weapon', 'Minigun', 5000)" class="w-full py-2 bg-yellow-500 text-slate-950 font-bold rounded-xl">Beli (5000 🪙)</button>
+                </div>
+            </div>
+            <div class="p-4 bg-purple-950/30 rounded-2xl border border-purple-500/30 mb-6 text-center">
+                <h3 class="font-bold text-lg mb-2 text-purple-400">📦 Peti Gacha Skin Senjata</h3>
+                <p class="text-xs text-slate-300 mb-4">Dapatkan skin dari Common (Jelek) hingga Legendary (Bagus)!</p>
+                <button onclick="openGachaBox()" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 font-bold rounded-xl shadow-lg">Beli Peti (300 🪙)</button>
+            </div>
+            <button onclick="closeModal('shop-modal')" class="w-full py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-2xl font-bold">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL: TEMAN & ROOM -->
+    <div id="friend-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-md w-full border border-slate-700">
+            <h2 class="text-2xl font-bold mb-4 text-center">Daftar Teman & Room</h2>
+            <div class="mb-4">
+                <label class="text-xs text-slate-400 mb-1 block">Gabung Room via Kode:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="room-code-input" placeholder="KODE (cth: TDS88)" class="w-full bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-white">
+                    <button onclick="joinRoom()" class="px-4 py-2 bg-indigo-600 font-bold rounded-xl">Gabung</button>
+         </div>
+            </div>
+            <div class="mb-4">
+                <h3 class="text-sm font-bold mb-2 text-slate-300">Daftar Teman Online:</h3>
+                <div class="space-y-2 max-h-40 overflow-y-auto">
+                    <div class="flex justify-between items-center p-2 bg-slate-800/50 rounded-xl">
+                        <span class="text-sm">🎮 ProGamer99</span>
+                        <span class="text-xs text-green-400">Dalam Lobi</span>
+                    </div>
+                    <div class="flex justify-between items-center p-2 bg-slate-800/50 rounded-xl">
+                        <span class="text-sm">🛡️ TowerMaster</span>
+                        <span class="text-xs text-yellow-400">Bermain</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('friend-modal')" class="w-full py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-2xl font-bold">Kembali</button>
+        </div>
+    </div>
+
+    <!-- MODAL: REDEEM CODE -->
+    <div id="code-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-md w-full border border-slate-700">
+            <h2 class="text-2xl font-bold mb-4 text-center">Redeem Code</h2>
+            <input type="text" id="redeem-input" placeholder="Masukkan Kode..." class="w-full bg-slate-800 border border-slate-700 px-4 py-3 rounded-xl text-white mb-4 uppercase text-center font-bold tracking-wider">
+            <button onclick="redeemCode()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 font-bold rounded-xl mb-3 shadow-lg shadow-cyan-500/20">Klaim Kode</button>
+            <button onclick="closeModal('code-modal')" class="w-full py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-2xl font-bold">Tutup</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ROBUX SHOP -->
+    <div id="robux-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-md w-full border border-slate-700">
+            <h2 class="text-2xl font-bold mb-4 text-center text-purple-400">💎 Toko Eksklusif Robux</h2>
+            <div class="space-y-3 mb-6">
+                <div class="p-3 bg-slate-800/50 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm">Godly Plasma Cannon</h4>
+                        <p class="text-xs text-slate-400">Senjata terkuat di game</p>
+                    </div>
+                    <button onclick="buyRobuxItem(50, 'Godly Plasma Cannon')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 font-bold rounded-xl text-sm">50 💎</button>
+                </div>
+                <div class="p-3 bg-slate-800/50 rounded-2xl flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm">VIP Double Coins</h4>
+                        <p class="text-xs text-slate-400">Bonus koin permanen</p>
+                    </div>
+                    <button onclick="buyRobuxItem(100, 'VIP Pass')" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 font-bold rounded-xl text-sm">100 💎</button>
+                </div>
+            </div>
+            <button onclick="closeModal('robux-modal')" class="w-full py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded-2xl font-bold">Tutup</button>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY HUD -->
+    <div id="game-hud" class="hidden absolute inset-0 z-40 pointer-events-none flex flex-col justify-between p-6">
+        <div class="flex justify-between items-center pointer-events-auto">
+            <div class="hud-panel px-6 py-3 rounded-2xl flex gap-6">
+                <div>❤️ HP: <span id="game-hp" class="font-bold text-red-400">100</span></div>
+                <div>🌊 Wave: <span id="game-wave" class="font-bold text-yellow-400">1</span></div>
+                <div>🪙 Koin: <span id="game-coins" class="font-bold text-yellow-400">0</span></div>
+            </div>
+            <button onclick="exitGame()" class="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-2xl font-bold shadow-lg pointer-events-auto">Keluar Permainan</button>
+        </div>
+        
+        <div class="flex justify-center gap-4 pointer-events-auto">
+            <button onclick="upgradeWeapon()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl font-bold shadow-lg">⚡ Upgrade Senjata (200 🪙)</button>
+        </div>
+    </div>
+
+    <!-- GAMEPLAY OVER / Kemenangan -->
+    <div id="endgame-modal" class="hidden absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="hud-panel p-6 rounded-3xl max-w-md w-full text-center border border-slate-700">
+            <h2 id="endgame-title" class="text-3xl font-bold mb-2">Permainan Selesai</h2>
+            <p id="endgame-reward" class="text-slate-300 mb-6">Anda mendapatkan hadiah koin & item hasil permainan!</p>
+            <button onclick="returnToLobby()" class="w-full py-3 bg-yellow-500 text-slate-950 font-bold rounded-2xl shadow-lg">Kembali ke Lobi</button>
+        </div>
+    </div>
+
+    <!-- LOGIKA GAME & JAVASCRIPT -->
+    <script>
+        // Data Game Global
+        let playerData = {
+            coins: 1500,
+            robux: 100,
+            weaponLevel: 1,
+            redeemedCodes: []
+        };
+
+        const validCodes = {
+            "TDS100": 200,
+            "TOWERDEFENSE": 400,
+            "FREECOIN": 500,
+            "RELEASE": 500,
+            "WELCOME": 1000,
+            "ADMIN": 2000
+        };
+
+        // Update Tampilan UI
+        function updateUI() {
+            document.getElementById('ui-coins').innerText = playerData.coins;
+            document.getElementById('ui-robux').innerText = playerData.robux;
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Redeem Code Sistem
+        function redeemCode() {
+            let input = document.getElementById('redeem-input').value.trim().toUpperCase();
+            if (validCodes[input]) {
+                if (playerData.redeemedCodes.includes(input)) {
+                    alert("Kode sudah pernah digunakan!");
+                } else {
+                    playerData.coins += validCodes[input];
+                    playerData.redeemedCodes.push(input);
+                    updateUI();
+                    alert(`Berhasil! Mendapatkan ${validCodes[input]} Koin.`);
+                    closeModal('code-modal');
+                }
+            } else {
+                alert("Kode tidak valid atau salah!");
+            }
+        }
+
+        // Sistem Beli & Gacha
+        function buyItem(type, name, price) {
+            if (playerData.coins >= price) {
+                playerData.coins -= price;
+                updateUI();
+                alert(`Berhasil membeli ${name}!`);
+            } else {
+                alert("Koin Anda tidak cukup!");
+            }
+        }
+
+        function openGachaBox() {
+            if (playerData.coins >= 300) {
+                playerData.coins -= 300;
+                updateUI();
+                const skins = ["Common Skin (Jelek)", "Rare Skin (Biasa)", "Epic Skin (Keren)", "Legendary Skin (Sangat Bagus)"];
+                const reward = skins[Math.floor(Math.random() * skins.length)];
+                alert(`🎁 Anda membuka peti dan mendapatkan: ${reward}!`);
+            } else {
+                alert("Koin tidak cukup untuk membeli peti (300 Koin)!");
+            }
+        }
+
+        function buyRobuxItem(cost, itemName) {
+            if (playerData.robux >= cost) {
+                playerData.robux -= cost;
+                updateUI();
+                alert(`Berhasil membeli ${itemName} dengan Robux!`);
+            } else {
+                alert("Robux Anda tidak cukup!");
+            }
+        }
+
+        function joinRoom() {
+            let code = document.getElementById('room-code-input').value;
+            if(code) {
+                alert(`Menghubungkan ke room dengan kode: ${code}`);
+                startGame('multi');
+            } else {
+                alert("Masukkan kode room terlebih dahulu!");
+            }
+        }
+
+        // --- THREE.JS 3D ENGINE ---
+        let scene, camera, renderer, enemies = [], gameActive = false, wave = 1, hp = 100, coinsEarned = 0;
+
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 20);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            let ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            let dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // Map Tower Defense (Path & Base)
+            let pathGeo = new THREE.BoxGeometry(25, 0.2, 4);
+            let pathMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+            let path = new THREE.Mesh(pathGeo, pathMat);
+            scene.add(path);
+
+            let towerGeo = new THREE.CylinderGeometry(1, 1.5, 4, 16);
+            let towerMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6 });
+            let tower = new THREE.Mesh(towerGeo, towerMat);
+            tower.position.set(0, 2, 0);
+            scene.add(tower);
+
+            animate3D();
+        }
+
+        function spawnEnemy() {
+            if(!gameActive) return;
+            let enemyGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+            let enemyMat = new THREE.MeshStandardMaterial({ color: 0xef4444 });
+            let enemy = new THREE.Mesh(enemyGeo, enemyMat);
+            enemy.position.set(-15, 0.75, (Math.random() - 0.5) * 2);
+            scene.add(enemy);
+            enemies.push(enemy);
+        }
+
+        function startGame(mode) {
+            closeModal('mode-modal');
+            document.getElementById('lobby-screen').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+            gameActive = true;
+            hp = 100;
+            wave = 1;
+            coinsEarned = 0;
+            document.getElementById('game-hp').innerText = hp;
+            document.getElementById('game-wave').innerText = wave;
+            document.getElementById('game-coins').innerText = coinsEarned;
+
+            // Spawn Musuh Berkala
+            window.enemySpawner = setInterval(() => {
+                if(gameActive) spawnEnemy();
+            }, 2000);
+        }
+
+        function upgradeWeapon() {
+            if(coinsEarned >= 200) {
+                coinsEarned -= 200;
+                playerData.weaponLevel++;
+                document.getElementById('game-coins').innerText = coinsEarned;
+                alert(`Senjata berhasil di-upgrade ke Level ${playerData.weaponLevel}!`);
+            } else {
+                alert("Koin dalam permainan tidak cukup (Butuh 200 Koin)!");
+            }
+        }
+
+        function exitGame() {
+            gameActive = false;
+            clearInterval(window.enemySpawner);
+            enemies.forEach(e => scene.remove(e));
+            enemies = [];
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('lobby-screen').classList.remove('hidden');
+            updateUI();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if(gameActive) {
+                enemies.forEach((enemy, index) => {
+                    enemy.position.x += 0.08;
+                    if(enemy.position.x >= 0) {
+                        scene.remove(enemy);
+                        enemies.splice(index, 1);
+                        hp -= 10;
+                        document.getElementById('game-hp').innerText = hp;
+                        if(hp <= 0) {
+                            gameActive = false;
+                            clearInterval(window.enemySpawner);
+                            document.getElementById('endgame-title').innerText = "Game Over!";
+                            document.getElementById('endgame-reward').innerText = `Anda bertahan hingga Wave ${wave} dan mengumpulkan ${coinsEarned} Koin serta Item bonus!`;
+                            playerData.coins += coinsEarned;
+                            document.getElementById('endgame-modal').classList.remove('hidden');
+                        }
+                    }
+                });
+            }
+            renderer.render(scene, camera);
+        }
+
+        function returnToLobby() {
+            document.getElementById('endgame-modal').classList.add('hidden');
+            exitGame();
+        }
+
+        window.onload = () => {
+            init3D();
+            updateUI();
+        };
+
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+    </script>
+</body>
+</html>
